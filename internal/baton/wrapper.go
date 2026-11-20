@@ -97,6 +97,9 @@ func (c *Config) runWrapper(acc Account, args []string, explicit bool) int {
 		if !ok {
 			return rc
 		}
+		if fresh, err := loadConfig(); err == nil {
+			c = fresh // 탭이 떠 있는 동안 추가한 계정으로도 옮길 수 있게
+		}
 		target, ok := c.find(m.Target)
 		if !ok || target.Name == acc.Name {
 			fmt.Fprintf(os.Stderr, L("! [baton] account %q is gone; not switching.\n", "! [baton] %q 계정이 없어 전환하지 않습니다.\n"), m.Target)

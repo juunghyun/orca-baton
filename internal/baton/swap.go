@@ -140,7 +140,7 @@ func isAncestor(pid int) bool {
 		if cur <= 1 {
 			return false
 		}
-		out, err := exec.Command("ps", "-o", "ppid=", "-p", strconv.Itoa(cur)).Output()
+		out, err := exec.Command("/bin/ps", "-o", "ppid=", "-p", strconv.Itoa(cur)).Output()
 		if err != nil {
 			return false
 		}
