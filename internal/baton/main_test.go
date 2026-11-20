@@ -40,8 +40,9 @@ if [ -n "$FAKE_SWAP" ]; then
   printf '{"prompt":"/swap %s","session_id":"sid-1"}' "$FAKE_SWAP" | "$BATON_BIN" hook prompt 2>>"$FAKE_LOG"
   echo "hook=$?" >> "$FAKE_LOG"
   if [ -n "$FAKE_WAIT" ]; then
-    trap 'echo term >> "$FAKE_LOG"; exit 0' TERM
-    sleep 5 & wait
+    sleep 5 </dev/null >/dev/null 2>&1 &
+    trap 'kill $! 2>/dev/null; echo term >> "$FAKE_LOG"; exit 0' TERM
+    wait
     echo not-killed >> "$FAKE_LOG"
   fi
 fi
