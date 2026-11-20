@@ -12,7 +12,8 @@ import (
 	"strings"
 )
 
-const Version = "dev"
+// Version 은 릴리스 빌드가 -ldflags "-X …/internal/baton.Version=<태그>" 로 덮어쓴다.
+var Version = "dev"
 
 var subcommands = []string{"claude", "add", "list", "ls", "rm", "alias", "rule", "set", "lang", "import",
 	"install", "uninstall", "hook", "statusline", "swap", "version", "help"}
@@ -108,6 +109,10 @@ func Main(argv []string) int {
 		return cfg.cmdLang(rest)
 	case "import":
 		return cfg.cmdImport()
+	case "install":
+		return cmdInstall()
+	case "uninstall":
+		return cmdUninstall()
 	case "hook":
 		if len(rest) == 1 && rest[0] == "prompt" {
 			return cfg.hookPrompt(os.Stdin)

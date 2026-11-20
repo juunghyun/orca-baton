@@ -19,6 +19,17 @@ jobs:
           go-version-file: go.mod
       - name: Tests
         run: go vet ./... && go test -race ./...
+      # 새 Mac 처럼: 릴리스와 같은 tar.gz 를 만들어 scripts/install.sh 로 설치 → 재설치 → 제거.
+      - name: Fresh install end to end
+        run: |
+          mkdir -p "$RUNNER_TEMP/b"
+          CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/b/baton" ./cmd/baton
+          tgz="$RUNNER_TEMP/baton-darwin.tar.gz"
+          tar -czf "$tgz" -C "$RUNNER_TEMP/b" baton
+          shasum -a 256 "$tgz" > "$tgz.sha256"
+          env -i HOME="$HOME" USER="$USER" PATH=/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh \
+            LANG=en_US.UTF-8 TERM=xterm-256color REPO="$GITHUB_WORKSPACE" BATON_TGZ="$tgz" \
+            /bin/zsh scripts/e2e-install.sh
   secrets:
     runs-on: ubuntu-latest
     steps:
