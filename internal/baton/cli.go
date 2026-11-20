@@ -114,6 +114,9 @@ func Main(argv []string) int {
 		}
 		fmt.Fprintln(os.Stderr, "usage: baton hook prompt   (hook JSON on stdin)")
 		return 1
+	case "statusline":
+		cfg.statusline(os.Stdin, os.Stdout)
+		return 0
 	case "swap":
 		return cfg.requestSwap(rest, os.Getenv("CLAUDE_CODE_SESSION_ID"), os.Stdout)
 	}
