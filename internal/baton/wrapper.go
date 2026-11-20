@@ -71,7 +71,8 @@ func (c *Config) bypass(argv []string) []string {
 	return []string{"--dangerously-skip-permissions"}
 }
 
-// runWrapper 는 `baton claude …` / `baton <계정> …`. claude 를 자식으로 띄우고 그 종료 코드로 끝난다.
+// runWrapper 는 `baton claude …` / `baton <계정> …`. claude 를 자식으로 띄우고, /swap 이 오면 끝내고
+// 같은 탭에서 대상 계정으로 이어 띄운다. 그 밖엔 claude 의 종료 코드로 끝난다.
 func (c *Config) runWrapper(acc Account, args []string, explicit bool) int {
 	bin, err := claudeBin()
 	if err != nil {
@@ -90,8 +91,28 @@ func (c *Config) runWrapper(acc Account, args []string, explicit bool) int {
 		cmd := exec.Command(bin, argv...)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		cmd.Env = launchEnv(acc, sessionName)
-		rc, _ := supervise(cmd, acc)
-		return rc
+		rc, name := supervise(cmd, acc)
+
+		m, ok := takeMarker(os.Getpid())
+		if !ok {
+			return rc
+		}
+		target, ok := c.find(m.Target)
+		if !ok || target.Name == acc.Name {
+			fmt.Fprintf(os.Stderr, L("! [baton] account %q is gone; not switching.\n", "! [baton] %q 계정이 없어 전환하지 않습니다.\n"), m.Target)
+			return rc
+		}
+		next := relaunchArgs(args)
+		if m.SID != "" {
+			if err := c.moveConversation(acc, target, m.SID); err != nil {
+				fmt.Fprintf(os.Stderr, L("! [baton] couldn't copy the conversation (%v); starting a new one on %s.\n",
+					"! [baton] 대화를 복사하지 못해(%v) %s 에서 새 대화로 엽니다.\n"), err, target.Name)
+			} else {
+				next = append([]string{"--resume", m.SID}, next...)
+			}
+		}
+		fmt.Fprintf(os.Stderr, "→ %s\n", L("continuing on "+target.Name, target.Name+" 계정에서 이어 갑니다"))
+		acc, args, sessionName = target, next, name
 	}
 }
 
@@ -99,7 +120,7 @@ func (c *Config) runWrapper(acc Account, args []string, explicit bool) int {
 func supervise(cmd *exec.Cmd, acc Account) (int, string) {
 	sigs := make(chan os.Signal, 4)
 	// Ignore 가 아니라 Notify: 무시한 신호는 exec 뒤 자식에도 무시된 채 남는다.
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGUSR1)
 	defer signal.Stop(sigs)
 	if err := cmd.Start(); err != nil {
 		fmt.Fprintln(os.Stderr, "✗ "+err.Error())
@@ -117,6 +138,12 @@ func supervise(cmd *exec.Cmd, acc Account) (int, string) {
 				switch s {
 				case syscall.SIGINT, syscall.SIGQUIT:
 					// 터미널이 같은 프로세스 그룹의 claude 에도 보낸다. 래퍼는 버틴다.
+				case syscall.SIGUSR1:
+					if _, ok := peekMarker(os.Getpid()); ok {
+						// 등록 파일은 claude 가 끝나면 남지 않을 수 있어 지금 읽는다.
+						name = sessionName(acc, cmd.Process.Pid)
+						go stopChild(cmd.Process, done)
+					}
 				default:
 					cmd.Process.Signal(s) // SIGTERM·SIGHUP 은 claude 에 넘기고 그 종료를 따른다
 				}

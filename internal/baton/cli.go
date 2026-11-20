@@ -108,6 +108,14 @@ func Main(argv []string) int {
 		return cfg.cmdLang(rest)
 	case "import":
 		return cfg.cmdImport()
+	case "hook":
+		if len(rest) == 1 && rest[0] == "prompt" {
+			return cfg.hookPrompt(os.Stdin)
+		}
+		fmt.Fprintln(os.Stderr, "usage: baton hook prompt   (hook JSON on stdin)")
+		return 1
+	case "swap":
+		return cfg.requestSwap(rest, os.Getenv("CLAUDE_CODE_SESSION_ID"), os.Stdout)
 	}
 	if acc, ok := cfg.find(sub); ok {
 		if len(rest) > 0 && rest[0] == "--" {
