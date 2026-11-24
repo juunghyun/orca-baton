@@ -26,7 +26,7 @@
 curl -fsSL https://raw.githubusercontent.com/juunghyun/orca-baton/main/scripts/install.sh | sh
 ```
 
-`~/.local/bin` 에 `baton`(과 `baton-claude` 링크)을 넣고, 받은 파일의 체크섬을 확인한 뒤 `baton install` 을 돌립니다. `baton install` 은 `~/.claude/settings.json` 에 `/swap`·그 훅·HUD 를 넣습니다. 아무것도 묻지 않고, 여러 번 돌려도 결과가 같습니다. `settings.json` 은 먼저 백업하고, 올바른 JSON 이 아니면 멈추고, 이미 쓰는 statusline 은 바꾸지 않습니다.
+`~/.local/bin` 에 `baton` 을 넣고, 받은 파일의 체크섬을 확인한 뒤 `baton install` 을 돌립니다. `baton install` 은 `~/.claude/settings.json` 에 `/swap`·그 훅·HUD 를 넣고 Orca 용 링크 `~/.local/share/orca-baton/bin/claude` 를 만듭니다. 아무것도 묻지 않고, 여러 번 돌려도 결과가 같습니다. `settings.json` 은 먼저 백업하고, 올바른 JSON 이 아니면 멈추고, 이미 쓰는 statusline 은 바꾸지 않습니다.
 
 그다음 계정과 폴더를 알려 주세요:
 
@@ -37,7 +37,7 @@ baton rule add ~/personal personal            # ~/personal 아래는 personal
 baton rule default work                       # 나머지는 work
 ```
 
-**Orca:** Orca 설정에서 Claude 실행 명령을 `baton claude` 로 바꾸세요(칸이 공백을 못 받으면 `baton-claude`). Orca 에서 Claude 에 계정별 인자(`--settings`, `--mcp-config` 등)를 넘기고 있었다면 baton 설정의 그 계정 `args` 로 옮기고 Orca 쪽은 비우세요. baton 은 Orca 설정을 바꾸지 않습니다.
+**Orca:** Orca 설정(Agents → Claude → 명령)에서 Claude 실행 명령을 `~/.local/share/orca-baton/bin/claude`(전체 경로)로 바꾸세요. baton 을 가리키는 `claude` 이름의 링크입니다. Orca 는 이 이름의 명령에만 자기 플러그인을 붙입니다. 이 폴더는 PATH 에 넣지 마세요. Orca 에서 Claude 에 계정별 인자(`--settings`, `--mcp-config` 등)를 넘기고 있었다면 baton 설정의 그 계정 `args` 로 옮기고 Orca 쪽은 비우세요. baton 은 Orca 설정을 바꾸지 않습니다.
 
 **일반 터미널:** `claude` 대신 `baton` 을 실행하세요. 인자는 그대로 Claude Code 로 갑니다(`baton --resume`, `baton -c` …).
 
@@ -94,7 +94,7 @@ Claude Code 에서 `/swap personal` 을 치세요. 훅이 모델 호출 전에 �
 ## 제거
 
 ```sh
-baton uninstall && rm ~/.local/bin/baton ~/.local/bin/baton-claude
+baton uninstall && rm ~/.local/bin/baton
 ```
 
 `settings.json` 에서 baton 이 넣은 것만 뺍니다. 계정·규칙·계정 폴더는 남습니다. Orca 의 Claude 실행 명령은 `claude` 로 되돌리세요.

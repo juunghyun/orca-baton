@@ -58,7 +58,13 @@ func xdg(env, fallback string) string {
 func configPath() string {
 	return filepath.Join(xdg("XDG_CONFIG_HOME", ".config"), "orca-baton", "config.json")
 }
-func stateDir() string   { return filepath.Join(xdg("XDG_STATE_HOME", ".local/state"), "orca-baton") }
+func stateDir() string { return filepath.Join(xdg("XDG_STATE_HOME", ".local/state"), "orca-baton") }
+
+// orcaLink 는 Orca 의 Claude 실행 명령에 넣을 링크. 파일 이름이 정확히 claude 여야 Orca 가 그 뒤에
+// 자기 플러그인(--plugin-dir)을 끼운다(S0 실측). PATH 밖에 둬서 진짜 claude 를 가리지 않는다.
+func orcaLink() string {
+	return filepath.Join(xdg("XDG_DATA_HOME", ".local/share"), "orca-baton", "bin", "claude")
+}
 func defaultDir() string { return filepath.Join(home(), ".claude") }
 
 // expand 는 ~/ 를 풀고 정리한다. 설정 파일엔 ~/ 로 적어 사용자 이름과 무관하게 둔다.

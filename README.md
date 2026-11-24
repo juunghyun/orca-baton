@@ -26,7 +26,7 @@ It's built for [Orca](https://github.com/stablyai/orca) (point Orca's Claude com
 curl -fsSL https://raw.githubusercontent.com/juunghyun/orca-baton/main/scripts/install.sh | sh
 ```
 
-This puts `baton` (and a `baton-claude` link) in `~/.local/bin`, checks the download's checksum, and runs `baton install`, which adds `/swap`, its hook and the HUD to `~/.claude/settings.json`. It never asks anything, is safe to re-run, backs up `settings.json` first, stops if that file isn't valid JSON, and leaves a statusline you already have alone.
+This puts `baton` in `~/.local/bin`, checks the download's checksum, and runs `baton install`, which adds `/swap`, its hook and the HUD to `~/.claude/settings.json` and makes the Orca link `~/.local/share/orca-baton/bin/claude`. It never asks anything, is safe to re-run, backs up `settings.json` first, stops if that file isn't valid JSON, and leaves a statusline you already have alone.
 
 Then tell baton about your accounts and folders:
 
@@ -37,7 +37,7 @@ baton rule add ~/personal personal            # folders under ~/personal use per
 baton rule default work                       # everything else uses work
 ```
 
-**Orca:** in Orca's settings, set the Claude command to `baton claude` (or `baton-claude` if the field won't take a space). If you passed account-specific flags to Claude in Orca (such as `--settings` or `--mcp-config`), move them to that account's `args` in baton's config and clear them in Orca. baton doesn't change Orca's settings.
+**Orca:** in Orca's settings (Agents → Claude → command), set the Claude command to `~/.local/share/orca-baton/bin/claude` (full path). It's a link to baton named `claude`; Orca only adds its own plugin after a command with that name. Keep that folder out of your PATH. If you passed account-specific flags to Claude in Orca (such as `--settings` or `--mcp-config`), move them to that account's `args` in baton's config and clear them in Orca. baton doesn't change Orca's settings.
 
 **Plain terminal:** run `baton` instead of `claude`. Arguments go to Claude Code as they are (`baton --resume`, `baton -c`, …).
 
@@ -94,7 +94,7 @@ Settings live in `~/.config/orca-baton/config.json`. Per-account `args` and `env
 ## Uninstall
 
 ```sh
-baton uninstall && rm ~/.local/bin/baton ~/.local/bin/baton-claude
+baton uninstall && rm ~/.local/bin/baton
 ```
 
 Removes only what baton added to `settings.json`. Accounts, rules and account folders stay. Point Orca's Claude command back to `claude`.

@@ -1,6 +1,7 @@
 package baton
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -30,5 +31,35 @@ func TestWrapperPicksAccountArgsAndEnv(t *testing.T) {
 	rc, log = s.run(s.path("elsewhere"), nil, "personal", "--resume", "sid-9")
 	if rc != 0 || !strings.Contains(runs(log)[0], "acct=personal") || s.read(".claude-accounts/personal/projects/-w/sid-9.jsonl") != "{\"a\":1}\n" {
 		t.Fatalf("explicit resume: rc=%d log=%q", rc, log)
+	}
+}
+
+func TestOrcaLinkAndOneShot(t *testing.T) {
+	s := newSandbox(t)
+	s.twoAccounts(func(c *Config) {
+		c.SkipPermissions = true
+		c.Accounts[1].Args = []string{"--model", "opus"}
+	})
+	link := s.path("orca-bin/claude")
+	s.mkdir("orca-bin")
+	if err := os.Symlink(batonBin, link); err != nil {
+		t.Fatal(err)
+	}
+	dir := s.mkdir("personal/proj")
+	cfg := "run cfg=" + s.path(".claude-accounts/personal") + " acct=personal name= args="
+
+	// claude 라는 이름으로 불리면 래퍼: 규칙 계정, 계정 인자, 권한 건너뛰기.
+	rc, log := s.runAs(link, dir, nil, "--plugin-dir", "/x")
+	if want := cfg + "[--model][opus][--dangerously-skip-permissions][--plugin-dir][/x]"; rc != 0 || len(runs(log)) != 1 || runs(log)[0] != want {
+		t.Fatalf("link: rc=%d\n got %q\nwant %q", rc, log, want)
+	}
+
+	// Orca 일회성 호출(-p, --version)은 계정과 계정 인자만. 권한 건너뛰기를 붙이지 않고 종료 코드는 그대로.
+	rc, log = s.runAs(link, dir, []string{"FAKE_RC=3"}, "-p", "--output-format", "stream-json")
+	if want := cfg + "[--model][opus][-p][--output-format][stream-json]"; rc != 3 || len(runs(log)) != 1 || runs(log)[0] != want {
+		t.Fatalf("-p: rc=%d\n got %q\nwant %q", rc, log, want)
+	}
+	if rc, log = s.runAs(link, dir, nil, "--version"); rc != 0 || runs(log)[0] != cfg+"[--model][opus][--version]" {
+		t.Fatalf("--version: rc=%d log=%q", rc, log)
 	}
 }

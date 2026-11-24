@@ -12,7 +12,7 @@ print '{"model": "opus"}' > "$HOME/.claude/settings.json"
 
 BATON_URL="file://$BATON_TGZ" /bin/sh "$REPO/scripts/install.sh" | tee "$HOME/install.log"
 b="$HOME/.local/bin/baton"
-[[ -x "$b" && -L "$HOME/.local/bin/baton-claude" ]] || fail "binary or baton-claude link missing"
+[[ -x "$b" && -L "$HOME/.local/share/orca-baton/bin/claude" ]] || fail "binary or Orca claude link missing"
 "$b" --version | grep -q '^baton ' || fail "--version"
 s="$HOME/.claude/settings.json"
 grep -q '"model": "opus"' "$s" || fail "existing settings lost"

@@ -65,7 +65,7 @@ func newSandbox(t *testing.T) *sandbox {
 		h = r // macOS 의 /var → /private/var
 	}
 	t.Setenv("HOME", h)
-	for _, k := range []string{"XDG_CONFIG_HOME", "XDG_STATE_HOME", "CLAUDE_CONFIG_DIR", "CODEX_HOME", "BATON_TAB", "BATON_ACCOUNT", "BATON_BIN", "COLUMNS"} {
+	for _, k := range []string{"XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_DATA_HOME", "CLAUDE_CONFIG_DIR", "CODEX_HOME", "BATON_TAB", "BATON_ACCOUNT", "BATON_BIN", "COLUMNS"} {
 		t.Setenv(k, "")
 		os.Unsetenv(k)
 	}
@@ -125,8 +125,14 @@ func (s *sandbox) twoAccounts(edit func(*Config)) *Config {
 
 func (s *sandbox) run(dir string, env []string, args ...string) (int, string) {
 	s.t.Helper()
+	return s.runAs(batonBin, dir, env, args...)
+}
+
+// runAs 는 run 과 같되 baton 을 bin 경로(예: claude 라는 이름의 링크)로 부른다.
+func (s *sandbox) runAs(bin, dir string, env []string, args ...string) (int, string) {
+	s.t.Helper()
 	os.Remove(s.log)
-	cmd := exec.Command(batonBin, args...)
+	cmd := exec.Command(bin, args...)
 	cmd.Dir = dir
 	cmd.Env = append([]string{"HOME=" + s.home, "PATH=/usr/bin:/bin:/usr/sbin:/sbin", "LANG=en_US.UTF-8",
 		"BATON_CLAUDE=" + s.fake, "BATON_BIN=" + batonBin, "FAKE_LOG=" + s.log}, env...)

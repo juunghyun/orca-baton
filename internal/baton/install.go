@@ -317,12 +317,29 @@ func cmdInstall() int {
 	}
 	report = append(report, "settings.json: "+note)
 	report = append(report, "/swap: "+installCommand())
-	report = append(report, L("Orca: in Settings, set the Claude command to `baton claude` (baton doesn't change Orca's settings).",
-		"Orca: 설정에서 Claude 실행 명령을 `baton claude` 로 바꾸세요 (baton 은 Orca 설정을 바꾸지 않습니다)."))
+	if err := linkOrca(); err != nil {
+		report = append(report, "Orca: "+err.Error())
+	} else {
+		report = append(report, fmt.Sprintf(L("Orca: in Settings → Agents → Claude, set the command to %s (baton doesn't change Orca's settings).",
+			"Orca: 설정 → Agents → Claude 의 명령을 %s 로 바꾸세요 (baton 은 Orca 설정을 바꾸지 않습니다)."), orcaLink()))
+	}
 	for _, r := range report {
 		fmt.Println(r)
 	}
 	return 0
+}
+
+// linkOrca 는 orcaLink 를 baton 바이너리로 향하게 만든다(있으면 다시 건다).
+func linkOrca() error {
+	l := orcaLink()
+	if err := os.MkdirAll(filepath.Dir(l), 0o755); err != nil {
+		return err
+	}
+	if fi, err := os.Lstat(l); err == nil && fi.Mode()&os.ModeSymlink == 0 {
+		return fmt.Errorf(L("%s exists and isn't a link; left as is", "%s 가 링크가 아닌 파일이라 그대로 둡니다"), l)
+	}
+	os.Remove(l)
+	return os.Symlink(binPath(), l)
 }
 
 func installCommand() string {
@@ -363,6 +380,9 @@ func cmdUninstall() int {
 	if b, err := os.ReadFile(commandFile()); err == nil && bytes.Contains(b, []byte(cmdMark)) {
 		os.Remove(commandFile())
 		fmt.Println("/swap: " + L("removed", "제거"))
+	}
+	if fi, err := os.Lstat(orcaLink()); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		os.Remove(orcaLink())
 	}
 	fmt.Println(L("Accounts, rules and account folders are kept. Point Orca's Claude command back to `claude`.",
 		"계정·규칙·계정 폴더는 그대로 둡니다. Orca 의 Claude 실행 명령은 `claude` 로 되돌리세요."))

@@ -1,6 +1,7 @@
 package baton
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -50,7 +51,14 @@ func TestInstallIsIdempotentAndKeepsOthers(t *testing.T) {
 		t.Fatalf("hook added %d times", n)
 	}
 
+	if dst, err := os.Readlink(s.path(".local/share/orca-baton/bin/claude")); err != nil || dst != s.path(".local/bin/baton") {
+		t.Fatalf("Orca link: %q %v", dst, err)
+	}
+
 	cmdUninstall()
+	if _, err := os.Lstat(s.path(".local/share/orca-baton/bin/claude")); err == nil {
+		t.Fatal("uninstall should remove the Orca link")
+	}
 	got = s.read(".claude/settings.json")
 	if strings.Contains(got, "baton") || !strings.Contains(got, "other-tool <in>") || fileExists(s.path(".claude/commands/swap.md")) {
 		t.Fatalf("uninstall should remove only ours:\n%s", got)

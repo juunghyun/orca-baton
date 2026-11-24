@@ -34,8 +34,8 @@ func claudeBin() (string, error) {
 	}
 	self, _ := os.Executable()
 	if realpath(p) == realpath(self) {
-		return "", errors.New(L("`claude` points back to baton. Point Orca's Claude command at `baton claude` instead of renaming baton.",
-			"`claude` 가 baton 자신을 가리킵니다. baton 이름을 바꾸지 말고 Orca 의 Claude 실행 명령을 `baton claude` 로 두세요."))
+		return "", errors.New(L("`claude` on PATH points back to baton. Keep baton's claude link ("+orcaLink()+") out of PATH.",
+			"PATH 의 `claude` 가 baton 자신을 가리킵니다. baton 의 claude 링크("+orcaLink()+")가 있는 폴더를 PATH 에서 빼세요."))
 	}
 	return p, nil
 }
@@ -81,6 +81,12 @@ func (c *Config) runWrapper(acc Account, args []string, explicit bool) int {
 	}
 	if explicit {
 		c.carryResume(acc, args)
+	}
+	if oneShot(args) {
+		// Orca 의 일회성 호출(사용량 확인·점검 `-p`, `--version`): 계정만 정하고 최신화·권한 건너뛰기·/swap 감시는 붙이지 않는다.
+		err := syscall.Exec(bin, slices.Concat([]string{bin}, acc.Args, args), launchEnv(acc, ""))
+		fmt.Fprintln(os.Stderr, "✗ "+err.Error())
+		return 127
 	}
 	sessionName := ""
 	for {

@@ -1,6 +1,9 @@
 package baton
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // claude 인자 중 값을 하나 받는 것 (Claude Code 2.1.329 실행 파일의 옵션 정의에서 확인).
 // 여러 값을 받는 것(--add-dir 등)도 하나로 본다. Orca 는 --mcp-config=<파일> 처럼 = 형태로 넘긴다.
@@ -58,6 +61,14 @@ func tokenize(args []string) []token {
 		}
 	}
 	return out
+}
+
+// oneShot 은 대화 화면 없이 한 번 돌고 끝나는 호출인가(-p/--print, -v/--version).
+// shortcut: TTY 유무는 보지 않는다(시험이 TTY 없이 돈다). S0 에서 본 Orca 일회성 호출은 모두 이 인자를 달았다.
+func oneShot(args []string) bool {
+	return slices.ContainsFunc(tokenize(args), func(t token) bool {
+		return t.flag == "-p" || t.flag == "--print" || t.flag == "-v" || t.flag == "--version"
+	})
 }
 
 // resumeSID 는 --resume <id> / -r <id> / --resume=<id> 의 세션 ID. 없거나 형식이 아니면 "".

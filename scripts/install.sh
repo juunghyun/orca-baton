@@ -33,7 +33,6 @@ fi
 tar -xzf "$tmp/$asset" -C "$tmp"
 mkdir -p "$dir"
 install -m 0755 "$tmp/baton" "$dir/baton"
-ln -sf baton "$dir/baton-claude"   # Orca 실행 명령 칸이 공백 있는 명령을 못 받을 때
 
 "$dir/baton" install
 case ":$PATH:" in

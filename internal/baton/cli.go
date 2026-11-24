@@ -25,7 +25,7 @@ func usage(w io.Writer) {
 	fmt.Fprint(w, L(`baton: start Claude Code on the right account and move conversations between accounts
 
   baton [claude args…]          Start Claude Code; the account follows your folder rules
-  baton claude [claude args…]   Same (use this as Orca's Claude command)
+  baton claude [claude args…]   Same (Orca uses it via the claude link; see baton install)
   baton <account> [args…]       Start on that account (overrides rules)
 
   baton add <name> [--dir D] [--group G] [--color C] [--no-login]
@@ -40,7 +40,7 @@ Inside Claude Code: /swap <account> [--yes]
 `, `baton: Claude Code 를 맞는 계정으로 띄우고, 대화를 계정 사이로 옮긴다
 
   baton [claude 인자…]          Claude Code 실행. 계정은 폴더 규칙을 따른다
-  baton claude [claude 인자…]   위와 같음 (Orca 의 Claude 실행 명령에 쓴다)
+  baton claude [claude 인자…]   위와 같음 (Orca 는 claude 링크로 부른다. baton install 참고)
   baton <계정> [인자…]          그 계정으로 실행 (규칙보다 우선)
 
   baton add <이름> [--dir 폴더] [--group 그룹] [--color 색] [--no-login]
@@ -55,8 +55,7 @@ Claude Code 안에서: /swap <계정> [--yes]
 `))
 }
 
-// Main 은 baton 바이너리의 진입점. argv[0] 이 baton-claude 면 `baton claude` 와 같다
-// (Orca 실행 명령 칸이 공백 있는 명령을 못 받을 때 쓰는 링크).
+// Main 은 baton 바이너리의 진입점. claude 라는 이름(orcaLink)으로 불리면 `baton claude` 와 같다.
 func Main(argv []string) int {
 	cfg, err := loadConfig()
 	args := argv[1:]
@@ -77,7 +76,7 @@ func Main(argv []string) int {
 		return 1
 	}
 	setLang(cfg.Language)
-	if filepath.Base(argv[0]) == "baton-claude" {
+	if filepath.Base(argv[0]) == "claude" {
 		return cfg.wrapRouted(args)
 	}
 	if sub == "" || (strings.HasPrefix(sub, "-") && !slices.Contains([]string{"-h", "--help", "-V", "--version"}, sub)) {
