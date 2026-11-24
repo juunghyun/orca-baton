@@ -20,7 +20,7 @@ func TestStatuslineSharesRateLimits(t *testing.T) {
 	var out bytes.Buffer
 	c.statusline(strings.NewReader(in), &out)
 	plain := ansiRE.ReplaceAllString(out.String(), "")
-	for _, want := range []string{"● team │ 5h", "42%", "1w", "Opus 5.5[1M]", "high", "ctx 12%"} {
+	for _, want := range []string{"●  team  │ 5h", "42%", "1w", "Opus 5.5[1M]", "high", "ctx 12%"} {
 		if !strings.Contains(plain, want) {
 			t.Errorf("HUD missing %q:\n%s", want, plain)
 		}

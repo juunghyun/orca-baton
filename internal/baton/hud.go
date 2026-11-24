@@ -220,6 +220,18 @@ func (c *Config) effortBit(level string, now time.Time) string {
 	return fmt.Sprintf("%s %s %s▌%s%s Lv.%d %s", meter, name, stripe, R, chip, effortLv[level], R)
 }
 
+// setting 은 기능 하나를 토글 스위치로 그린다 (Python 판 HUD 와 같은 모양). 꺼짐은 색을 못 봐도 알게 글자로도.
+func setting(icon, name string, on, bad bool, warn string) string {
+	const grn, org = "\033[38;5;42m", "\033[38;5;214m"
+	switch {
+	case !on:
+		return dim + "\033[38;5;240m" + icon + " " + name + R + " \033[48;5;244m \033[48;5;236m  " + R + " " + dim + L("off", "꺼짐") + R
+	case bad:
+		return org + icon + R + " " + name + " \033[48;2;90;51;0m  \033[48;5;214m " + R + " " + bold + org + warn + R
+	}
+	return grn + icon + R + " " + name + " \033[48;5;22m  \033[48;5;42m " + R
+}
+
 var ansiRE = regexp.MustCompile(`\033\[[0-9;?]*[A-Za-z]`)
 
 // vislen 은 ANSI 를 뺀 표시 폭 (한글 등 전각은 2칸).
@@ -290,7 +302,8 @@ func (c *Config) statusline(in io.Reader, out io.Writer) {
 	sep, pipe := dim+" · "+R, dim+" │ "+R
 
 	col := c.color(acc)
-	badge := col + "●" + R + " " + bold + col + acc.Name + R
+	// 지금 계정은 계정 색 바탕으로 반전해 강조한다.
+	badge := col + "●" + R + " " + bold + col + "\033[7m " + acc.Name + " " + R
 	if acc.Group != "" && !strings.EqualFold(acc.Group, acc.Name) {
 		badge += " " + col + "[" + strings.ToUpper(acc.Group) + "]" + R
 	}
@@ -312,7 +325,8 @@ func (c *Config) statusline(in io.Reader, out io.Writer) {
 		if readJSON(ratePath(a.Name), &f) != nil {
 			continue
 		}
-		s := c.color(a) + a.Name + R + " " + otherPct(f.FiveHour, now) + "/" + otherPct(f.SevenDay, now)
+		// 대기 계정은 이름만 흐리게, 수치는 그대로 잘 보이게.
+		s := dim + c.color(a) + a.Name + R + " " + otherPct(f.FiveHour, now) + "/" + otherPct(f.SevenDay, now)
 		if age := now.Sub(unix(f.At)); age > staleAge {
 			s = dim + L(short(age)+" ago ", short(age)+" 전 ") + R + s
 		}
@@ -333,16 +347,10 @@ func (c *Config) statusline(in io.Reader, out io.Writer) {
 	if d.Ctx.Used != nil {
 		line3 = append(line3, dim+"ctx"+R+" "+pctColor(*d.Ctx.Used)+fmt.Sprintf("%.0f%%", *d.Ctx.Used)+R)
 	}
-	if c.SkipPermissions {
-		line3 = append(line3, "\033[38;5;214m⚡"+R+L("skip permissions", "권한 확인 건너뜀"))
-	}
-	if c.AutoUpdate {
-		u := "\033[38;5;42m⟳" + R + L("auto-update", "자동 최신화")
-		if _, err := os.Stat(filepath.Join(stateDir(), "update-failed")); err == nil {
-			u += " " + bold + "\033[38;5;214m" + L("failed", "실패") + R
-		}
-		line3 = append(line3, u)
-	}
+	_, err := os.Stat(filepath.Join(stateDir(), "update-failed"))
+	line3 = append(line3,
+		setting("⚡", L("Skip permissions", "권한 건너뛰기"), c.SkipPermissions, false, ""),
+		setting("⟳", L("Update", "업데이트"), c.AutoUpdate, err == nil, L("failed", "실패")))
 	lines = append(lines, wrap(line3, sep, limit)...)
 	fmt.Fprintln(out, strings.Join(lines, "\n"))
 }
